@@ -1,0 +1,32 @@
+MODULE main
+VAR
+	authorized        : boolean;
+	checkingPrevOrders: boolean;
+	request           : boolean;
+	isCash   	      : boolean;
+	confirmed         : boolean;
+	state             : {loginAndAuthenication, idle, selectPaymentType,
+			             previousOrders, orderConfirmation, dispatchOrder};
+ASSIGN
+
+	init(state) := loginAndAuthenication;
+	next(state) := case
+		
+			(state = loginAndAuthenication) &  (authorized) : idle;
+			(state = loginAndAuthenication) & !(authorized) : loginAndAuthenication;
+			(state = idle) &  (request)			: selectPaymentType;
+			(state = idle) & !(request )                    : idle;
+			(state = idle) &  (checkingPrevOrders)          : previousOrders;
+			(state = selectPaymentType) &  (isCash)         : orderConfirmation;
+			(state = orderConfirmation) &  (confirmed)	: dispatchOrder;
+			(state = orderConfirmation) & !(confirmed)	: idle;
+		esac;	
+			
+	
+			
+SPEC AG( authorized -> AF (state = idle))
+SPEC AG((state = idle) U (request | checkingPrevOrders))
+SPEC AG( state = idle & (request | checkingPrevOrders) -> AF (state = selectPaymentType | state = previousOrders))
+SPEC AG((state = selectPayment) -> EF(isCash = 1 | isCash = 0))
+SPEC AF((state = dispatchOrder) -> AG (confirmed))
+
